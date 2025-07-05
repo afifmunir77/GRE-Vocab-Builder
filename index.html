@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GRE Vocab Builder</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom font for a clean look */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for option buttons feedback */
+        .option-button {
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .option-button:hover:not(.correct):not(.incorrect) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        .option-button.correct {
+            background-color: #10B981; /* Green-500 */
+            color: white;
+            pointer-events: none; /* Disable clicks after selection */
+        }
+        .option-button.incorrect {
+            background-color: #EF4444; /* Red-500 */
+            color: white;
+            pointer-events: none; /* Disable clicks after selection */
+        }
+        .option-button.disabled {
+            pointer-events: none; /* Disable clicks */
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-100 to-purple-200 min-h-screen flex items-center justify-center p-4">
+    <div id="game-container" class="flex flex-col items-center justify-center w-full">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-3xl border border-gray-200">
+            <h1 class="text-4xl font-extrabold text-center mb-8 text-gray-900 leading-tight">GRE Vocab Builder</h1>
+
+            <div id="question-area" class="mb-8 text-center bg-gray-50 p-6 rounded-lg border border-gray-100">
+                <p id="question-text" class="text-2xl text-gray-800 mb-6 font-medium"></p>
+                <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- Options will be dynamically inserted here -->
+                </div>
+            </div>
+
+            <div id="feedback-area" class="text-center text-xl font-bold mb-8 h-8"></div>
+
+            <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                <p class="text-lg text-gray-700 font-semibold">Score: <span id="score" class="text-blue-600">0</span> / <span id="total-questions" class="text-gray-600">60</span></p>
+                <button id="next-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300" style="display: none;">Next Question</button>
+                <button id="restart-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300" style="display: none;">Play Again</button>
+            </div>
+
+            <div id="game-over-message" class="text-center text-3xl font-extrabold text-gray-900 mt-8" style="display: none;">
+                Game Over! Your final score is <span id="final-score" class="text-blue-600">0</span>.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data for words and their meanings
+        const wordsData = [
+            { word: 'ABATE', meaning: 'TO DECREASE; REDUCE' },
+            { word: 'ABDICATE', meaning: 'TO GIVE UP A POSITION, RIGHT, OR POWER' },
+            { word: 'ABERRANT', meaning: 'DEVIATING FROM WHAT IS NORMAL' },
+            { word: 'ABEYANCE', meaning: 'TEMPORARY SUPPRESSION OR SUSPENSION' },
+            { word: 'ABJECT', meaning: 'MISERABLE; PITIFUL' },
+            { word: 'ABJURE', meaning: 'TO REJECT; ABANDON FORMALLY' },
+            { word: 'ABSCISSION', meaning: 'N. THE ACT OF CUTTING; THE NATURAL SEPARATION OF A LEAF OR OTHER PART OF A PLANT, V. TO CUT OFF OR AWAY (ABSCISE)' },
+            { word: 'ABSCOND', meaning: 'TO DEPART SECRETLY' },
+            { word: 'ABSTEMIOUS', meaning: 'MODERATE IN APPETITE' },
+            { word: 'ABSTINENCE', meaning: 'THE GIVING UP OF CERTAIN PLEASURES' },
+            { word: 'ABYSMAL', meaning: 'VERY BAD' },
+            { word: 'ACCRETION', meaning: 'GROWTH IN SIZE OR INCREASE IN AMOUNT' },
+            { word: 'ACCRUE', meaning: 'TO ACCUMULATE; GROW BY ADDITIONS' },
+            { word: 'ADAMANT', meaning: 'UNCOMPROMISING UNYIELDING' },
+            { word: 'ADJUNCT', meaning: 'SOMETHING ADDED, OR JOINED' },
+            { word: 'ADMONISH', meaning: 'TO CAUTION OR REPRIMAND' },
+            { word: 'ADULTERATE', meaning: 'TO CORRUPT OR MAKE IMPURE' },
+            { word: 'AESTHETIC', meaning: 'ADJ. RELATING TO BEAUTY OR ART, N. A CONCEPTION OF WHAT IS ARTISTICALLY BEAUTIFUL' },
+            { word: 'AFFECTED', meaning: 'PRETENTIOUS, PHONY' },
+            { word: 'AFFINITY', meaning: 'FONDNESS; LIKING; SIMILARITY' },
+            { word: 'AGGRANDIZE', meaning: 'TO MAKE LARGER OR GREATER' },
+            { word: 'AGGREGATE', meaning: 'ADJ. AMOUNTING TO A WHOLE; TOTAL, V. TO COLLECT INTO A MASS, N. COLLECTIVE MASS OR SUM' },
+            { word: 'ALACRITY', meaning: 'CHEERFUL WILLINGNESS; EAGERNESS; SPEED' },
+            { word: 'ALCHEMY', meaning: 'MEDIEVAL CHEMICAL PHILOSOPHY BASED ON CHANGING METAL INTO GOLD; A SEEMINGLY MAGICAL POWER OR PROCESS OF TRANSMUTATION' },
+            { word: 'ALLAY', meaning: 'TO LESSEN; EASE; SOOTHE' },
+            { word: 'ALLEVIATE', meaning: 'TO RELIEVE; IMPROVE PARTIALLY' },
+            { word: 'ALLOY', meaning: 'A COMBINATION; A MIXTURE OF TWO OR MORE METALS' },
+            { word: 'ALLURE', meaning: 'THE POWER TO ENTICE BY CHARM' },
+            { word: 'AMALGAMATE', meaning: 'TO COMBINE INTO A UNIFIED WHOLE' },
+            { word: 'AMBIGUOUS', meaning: 'UNCLEAR OR DOUBTFUL IN MEANING' }
+        ];
+
+        // Sentences for fill-in-the-blanks. Each word has two sentences.
+        const sentences = [
+            { word: 'ABATE', sentence: 'The storm began to ____ after an hour of heavy rain.' },
+            { word: 'ABATE', sentence: 'We waited for the noise to ____ before continuing our conversation.' },
+            { word: 'ABDICATE', sentence: 'The king decided to ____ his throne rather than rule under duress.' },
+            { word: 'ABDICATE', sentence: 'She chose to ____ her responsibilities due to overwhelming stress.' },
+            { word: 'ABERRANT', sentence: 'His ____ behavior at the party raised many eyebrows.' },
+            { word: 'ABERRANT', sentence: 'Finding a four-leaf clover is considered an ____ occurrence.' },
+            { word: 'ABEYANCE', sentence: 'The project was held in ____ until new funding could be secured.' },
+            { word: 'ABEYANCE', sentence: 'The rules were put in ____ for the duration of the emergency.' },
+            { word: 'ABJECT', sentence: 'Living in ____ poverty, they struggled for daily survival.' },
+            { word: 'ABJECT', sentence: 'He offered an ____ apology for his terrible mistake.' },
+            { word: 'ABJURE', sentence: 'He was forced to ____ his former beliefs under pressure.' },
+            { word: 'ABJURE', sentence: 'To become a citizen, one must ____ allegiance to foreign powers.' },
+            { word: 'ABSCISSION', sentence: 'The natural ____ of leaves in autumn is a beautiful sight.' },
+            { word: 'ABSCISSION', sentence: 'The surgeon performed an ____ to remove the diseased tissue.' },
+            { word: 'ABSCOND', sentence: 'The thief tried to ____ with the stolen jewels.' },
+            { word: 'ABSCOND', sentence: 'He decided to ____ from the country to avoid arrest.' },
+            { word: 'ABSTEMIOUS', sentence: 'An ____ diet can lead to a longer, healthier life.' },
+            { word: 'ABSTEMIOUS', sentence: 'She was known for her ____ habits, rarely indulging in excess.' },
+            { word: 'ABSTINENCE', sentence: 'His ____ from sugar greatly improved his health.' },
+            { word: 'ABSTINENCE', sentence: 'The doctor recommended complete ____ from alcohol.' },
+            { word: 'ABYSMAL', sentence: 'The team\'s performance was ____, leading to a crushing defeat.' },
+            { word: 'ABYSMAL', sentence: 'The quality of the service was ____, much to our disappointment.' },
+            { word: 'ACCRETION', sentence: 'The island grew larger due to the ____ of sand over centuries.' },
+            { word: 'ACCRETION', sentence: 'The ____ of wealth allowed him to live a life of luxury.' },
+            { word: 'ACCRUE', sentence: 'Interest will ____ on your savings account over time.' },
+            { word: 'ACCRUE', sentence: 'Benefits will ____ to employees after a year of service.' },
+            { word: 'ADAMANT', sentence: 'She was ____ that she would not change her decision.' },
+            { word: 'ADAMANT', sentence: 'He remained ____ in his refusal to compromise.' },
+            { word: 'ADJUNCT', sentence: 'The laboratory was an ____ to the main research facility.' },
+            { word: 'ADJUNCT', sentence: 'Learning a foreign language can be a valuable ____ to your education.' },
+            { word: 'ADMONISH', sentence: 'The teacher had to ____ the students for talking during the lecture.' },
+            { word: 'ADMONISH', sentence: 'He was ____ by his parents for staying out too late.' },
+            { word: 'ADULTERATE', sentence: 'The company was accused of trying to ____ their products with cheap fillers.' },
+            { word: 'ADULTERATE', sentence: 'To ____ food is to make it impure by adding inferior substances.' },
+            { word: 'AESTHETIC', sentence: 'The painting had great ____ appeal, pleasing to the eye.' },
+            { word: 'AESTHETIC', sentence: 'His keen ____ sense guided his interior design choices.' },
+            { word: 'AFFECTED', sentence: 'Her ____ accent made her sound insincere.' },
+            { word: 'AFFECTED', sentence: 'He had an ____ air of superiority that annoyed everyone.' },
+            { word: 'AFFINITY', sentence: 'She felt a strong ____ for classical music.' },
+            { word: 'AFFINITY', sentence: 'There was a clear ____ between the two artists\' styles.' },
+            { word: 'AGGRANDIZE', sentence: 'Politicians often try to ____ their own power.' },
+            { word: 'AGGRANDIZE', sentence: 'He tried to ____ his achievements, making them seem more impressive.' },
+            { word: 'AGGREGATE', sentence: 'The ____ score of all participants determined the winner.' },
+            { word: 'AGGREGATE', sentence: 'We need to ____ the data from all sources to get a complete picture.' },
+            { word: 'ALACRITY', sentence: 'She accepted the new challenge with ____ and enthusiasm.' },
+            { word: 'ALACRITY', sentence: 'He responded to the request with surprising ____.' },
+            { word: 'ALCHEMY', sentence: 'The ancient practice of ____ sought to turn lead into gold.' },
+            { word: 'ALCHEMY', sentence: 'Her ability to transform simple ingredients into gourmet meals seemed like ____.' },
+            { word: 'ALLAY', sentence: 'He tried to ____ her fears about the upcoming exam.' },
+            { word: 'ALLAY', sentence: 'A warm cup of tea can often ____ a sore throat.' },
+            { word: 'ALLEVIATE', sentence: 'Medication can help to ____ the pain.' },
+            { word: 'ALLEVIATE', sentence: 'They implemented measures to ____ the suffering of the refugees.' },
+            { word: 'ALLOY', sentence: 'Bronze is an ____ of copper and tin.' },
+            { word: 'ALLOY', sentence: 'The new material is a strong ____ designed for aerospace.' },
+            { word: 'ALLURE', sentence: 'The ____ of the exotic destination was irresistible.' },
+            { word: 'ALLURE', sentence: 'The city\'s vibrant nightlife holds a strong ____ for tourists.' },
+            { word: 'AMALGAMATE', sentence: 'The two companies decided to ____ into one large corporation.' },
+            { word: 'AMALGAMATE', sentence: 'We need to ____ these different ideas into a cohesive plan.' },
+            { word: 'AMBIGUOUS', sentence: 'The instructions were ____, making it difficult to understand the task.' },
+            { word: 'AMBIGUOUS', sentence: 'His response was ____, leaving us unsure of his true feelings.' }
+        ];
+
+        let questions = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        // Get DOM elements
+        const questionTextElement = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedbackArea = document.getElementById('feedback-area');
+        const scoreElement = document.getElementById('score');
+        const totalQuestionsElement = document.getElementById('total-questions');
+        const nextButton = document.getElementById('next-button');
+        const restartButton = document.getElementById('restart-button');
+        const gameOverMessage = document.getElementById('game-over-message');
+        const finalScoreElement = document.getElementById('final-score');
+
+        /**
+         * Shuffles an array in place using the Fisher-Yates (Knuth) shuffle algorithm.
+         * @param {Array} array The array to shuffle.
+         * @returns {Array} The shuffled array.
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]]; // Swap elements
+            }
+            return array;
+        }
+
+        /**
+         * Generates the quiz questions with a correct answer and three random incorrect options.
+         */
+        function generateQuestions() {
+            questions = [];
+            const shuffledSentences = shuffleArray([...sentences]); // Shuffle all sentences
+
+            shuffledSentences.forEach(qData => {
+                const correctAnswer = qData.word;
+                let options = [correctAnswer]; // Start with the correct answer
+
+                // Get all other words excluding the correct one
+                const otherWords = wordsData.filter(w => w.word !== correctAnswer).map(w => w.word);
+                const shuffledOtherWords = shuffleArray(otherWords);
+
+                // Add 3 random incorrect options
+                for (let i = 0; options.length < 4 && i < shuffledOtherWords.length; i++) {
+                    options.push(shuffledOtherWords[i]);
+                }
+
+                // Shuffle the options for the current question
+                options = shuffleArray(options);
+
+                questions.push({
+                    sentence: qData.sentence,
+                    correctAnswer: correctAnswer,
+                    options: options
+                });
+            });
+            totalQuestionsElement.textContent = questions.length;
+        }
+
+        /**
+         * Displays the current question and its options.
+         */
+        function displayQuestion() {
+            feedbackArea.textContent = ''; // Clear previous feedback
+            nextButton.style.display = 'none'; // Hide next button
+
+            if (currentQuestionIndex >= questions.length) {
+                endGame();
+                return;
+            }
+
+            const question = questions[currentQuestionIndex];
+            questionTextElement.textContent = question.sentence;
+            optionsContainer.innerHTML = ''; // Clear previous options
+
+            question.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add(
+                    'option-button',
+                    'bg-blue-50', 'hover:bg-blue-100', 'text-blue-800', 'font-semibold',
+                    'py-3', 'px-4', 'rounded-lg', 'border', 'border-blue-200',
+                    'transition', 'duration-200', 'ease-in-out', 'w-full', 'text-lg'
+                );
+                button.addEventListener('click', () => checkAnswer(button, option, question.correctAnswer));
+                optionsContainer.appendChild(button);
+            });
+
+            // Ensure all buttons are enabled for the new question
+            document.querySelectorAll('.option-button').forEach(btn => {
+                btn.classList.remove('correct', 'incorrect', 'disabled');
+                btn.style.pointerEvents = 'auto'; // Re-enable pointer events
+            });
+        }
+
+        /**
+         * Checks the selected answer against the correct answer.
+         * @param {HTMLElement} selectedButton The button element that was clicked.
+         * @param {string} selectedOption The text content of the selected option.
+         * @param {string} correctAnswer The correct answer for the current question.
+         */
+        function checkAnswer(selectedButton, selectedOption, correctAnswer) {
+            // Disable all option buttons after a choice is made
+            document.querySelectorAll('.option-button').forEach(button => {
+                button.classList.add('disabled');
+                button.style.pointerEvents = 'none'; // Ensure no more clicks
+            });
+
+            if (selectedOption === correctAnswer) {
+                score++;
+                feedbackArea.textContent = 'Correct!';
+                feedbackArea.style.color = '#10B981'; // Tailwind green-500
+                selectedButton.classList.add('correct');
+            } else {
+                feedbackArea.textContent = 'Incorrect. The correct answer was: ' + correctAnswer;
+                feedbackArea.style.color = '#EF4444'; // Tailwind red-500
+                selectedButton.classList.add('incorrect');
+
+                // Highlight the correct answer
+                document.querySelectorAll('.option-button').forEach(button => {
+                    if (button.textContent === correctAnswer) {
+                        button.classList.add('correct');
+                    }
+                });
+            }
+            scoreElement.textContent = score;
+            nextButton.style.display = 'block'; // Show next button
+        }
+
+        /**
+         * Advances to the next question or ends the game.
+         */
+        function nextQuestion() {
+            currentQuestionIndex++;
+            displayQuestion();
+        }
+
+        /**
+         * Ends the game and displays the final score.
+         */
+        function endGame() {
+            questionArea.style.display = 'none';
+            feedbackArea.style.display = 'none';
+            nextButton.style.display = 'none';
+            scoreElement.parentElement.style.display = 'none'; // Hide score display
+
+            gameOverMessage.style.display = 'block';
+            finalScoreElement.textContent = score;
+            restartButton.style.display = 'block';
+        }
+
+        /**
+         * Resets the game to its initial state.
+         */
+        function restartGame() {
+            currentQuestionIndex = 0;
+            score = 0;
+            scoreElement.textContent = score;
+            questionArea.style.display = 'block';
+            feedbackArea.style.display = 'block';
+            gameOverMessage.style.display = 'none';
+            restartButton.style.display = 'none';
+            scoreElement.parentElement.style.display = 'flex'; // Show score display again
+
+            generateQuestions(); // Regenerate and shuffle questions for a new game
+            displayQuestion();
+        }
+
+        // Event listeners
+        nextButton.addEventListener('click', nextQuestion);
+        restartButton.addEventListener('click', restartGame);
+
+        // Initialize the game when the window loads
+        window.onload = function() {
+            generateQuestions();
+            displayQuestion();
+        };
+    </script>
+</body>
+</html>
