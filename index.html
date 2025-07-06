@@ -52,13 +52,16 @@
             <div id="feedback-area" class="text-center text-xl font-bold mb-8 h-8"></div>
 
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
-                <p class="text-lg text-gray-700 font-semibold">Score: <span id="score" class="text-blue-600">0</span> / <span id="total-questions" class="text-gray-600">60</span></p>
+                <p id="current-score-display" class="text-lg text-gray-700 font-semibold">Score: <span class="text-green-600">0</span>-<span class="text-red-600">0</span> out of <span id="total-questions" class="text-gray-600">60</span></p>
                 <button id="next-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300" style="display: none;">Next Question</button>
+            </div>
+            <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mt-4">
                 <button id="restart-button" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300" style="display: none;">Play Again</button>
+                <button id="retest-wrong-button" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-yellow-300" style="display: none;">Retest Wrong Answers</button>
             </div>
 
             <div id="game-over-message" class="text-center text-3xl font-extrabold text-gray-900 mt-8" style="display: none;">
-                Game Over! Your final score is <span id="final-score" class="text-blue-600">0</span>.
+                Game Over! Your final score is <span id="final-score-correct" class="text-green-600">0</span>-<span id="final-score-wrong" class="text-red-600">0</span> out of <span id="final-score-total" class="text-gray-600">0</span>.
             </div>
         </div>
     </div>
@@ -164,18 +167,25 @@
 
         let questions = [];
         let currentQuestionIndex = 0;
-        let score = 0;
+        let score = 0; // Will be replaced by correctAnswers
+        let correctAnswers = 0;
+        let wrongAnswers = 0;
+        let wronglyAnsweredQuestions = [];
 
         // Get DOM elements
         const questionTextElement = document.getElementById('question-text');
         const optionsContainer = document.getElementById('options-container');
         const feedbackArea = document.getElementById('feedback-area');
-        const scoreElement = document.getElementById('score');
-        const totalQuestionsElement = document.getElementById('total-questions');
+        const currentScoreDisplay = document.getElementById('current-score-display');
+        const totalQuestionsElement = document.getElementById('total-questions'); // This span is inside current-score-display now for total in game
         const nextButton = document.getElementById('next-button');
         const restartButton = document.getElementById('restart-button');
+        const retestWrongButton = document.getElementById('retest-wrong-button');
         const gameOverMessage = document.getElementById('game-over-message');
-        const finalScoreElement = document.getElementById('final-score');
+        const finalScoreCorrectElement = document.getElementById('final-score-correct');
+        const finalScoreWrongElement = document.getElementById('final-score-wrong');
+        const finalScoreTotalElement = document.getElementById('final-score-total');
+
 
         /**
          * Shuffles an array in place using the Fisher-Yates (Knuth) shuffle algorithm.
@@ -276,10 +286,16 @@
                 feedbackArea.textContent = 'Correct!';
                 feedbackArea.style.color = '#10B981'; // Tailwind green-500
                 selectedButton.classList.add('correct');
+                correctAnswers++;
             } else {
                 feedbackArea.textContent = 'Incorrect. The correct answer was: ' + correctAnswer;
                 feedbackArea.style.color = '#EF4444'; // Tailwind red-500
                 selectedButton.classList.add('incorrect');
+                wrongAnswers++;
+                // Add to list of wrong questions if not already (for retest mode)
+                if (!wronglyAnsweredQuestions.find(q => q.sentence === questions[currentQuestionIndex].sentence)) {
+                    wronglyAnsweredQuestions.push(questions[currentQuestionIndex]);
+                }
 
                 // Highlight the correct answer
                 document.querySelectorAll('.option-button').forEach(button => {
@@ -288,8 +304,15 @@
                     }
                 });
             }
-            scoreElement.textContent = score;
+            updateScoreDisplay();
             nextButton.style.display = 'block'; // Show next button
+        }
+
+        /**
+         * Updates the score display on the page.
+         */
+        function updateScoreDisplay() {
+            currentScoreDisplay.innerHTML = `Score: <span class="text-green-600">${correctAnswers}</span>-<span class="text-red-600">${wrongAnswers}</span> out of <span id="total-questions" class="text-gray-600">${questions.length}</span>`;
         }
 
         /**
@@ -307,11 +330,47 @@
             questionArea.style.display = 'none';
             feedbackArea.style.display = 'none';
             nextButton.style.display = 'none';
-            scoreElement.parentElement.style.display = 'none'; // Hide score display
+            currentScoreDisplay.style.display = 'none'; // Hide current score display
 
             gameOverMessage.style.display = 'block';
-            finalScoreElement.textContent = score;
+            finalScoreCorrectElement.textContent = correctAnswers;
+            finalScoreWrongElement.textContent = wrongAnswers;
+            finalScoreTotalElement.textContent = questions.length; // This should be original total or retest total
             restartButton.style.display = 'block';
+
+            if (wronglyAnsweredQuestions.length > 0) {
+                retestWrongButton.style.display = 'block';
+            } else {
+                retestWrongButton.style.display = 'none';
+            }
+        }
+
+
+        /**
+         * Starts a retest with only the questions that were answered incorrectly.
+         */
+        function retestWrongQuestions() {
+            if (wronglyAnsweredQuestions.length === 0) {
+                // Fallback, though button shouldn't be visible
+                restartGame();
+                return;
+            }
+            questions = [...wronglyAnsweredQuestions]; // Use a copy
+            wronglyAnsweredQuestions = []; // Clear for the next round of potential wrong answers in retest
+            currentQuestionIndex = 0;
+            correctAnswers = 0;
+            wrongAnswers = 0;
+
+            questionArea.style.display = 'block';
+            feedbackArea.style.display = 'block';
+            gameOverMessage.style.display = 'none';
+            restartButton.style.display = 'none';
+            retestWrongButton.style.display = 'none';
+            currentScoreDisplay.style.display = 'flex';
+
+            // totalQuestionsElement.textContent = questions.length; // Update total for retest - Handled by updateScoreDisplay
+            updateScoreDisplay();
+            displayQuestion();
         }
 
         /**
@@ -319,25 +378,32 @@
          */
         function restartGame() {
             currentQuestionIndex = 0;
-            score = 0;
-            scoreElement.textContent = score;
+            correctAnswers = 0;
+            wrongAnswers = 0;
+            wronglyAnsweredQuestions = []; // Clear wrongly answered questions
+            // score = 0; // Not needed anymore
             questionArea.style.display = 'block';
             feedbackArea.style.display = 'block';
             gameOverMessage.style.display = 'none';
             restartButton.style.display = 'none';
-            scoreElement.parentElement.style.display = 'flex'; // Show score display again
+            retestWrongButton.style.display = 'none'; // Hide retest button
+            currentScoreDisplay.style.display = 'flex'; // Show score display again
 
-            generateQuestions(); // Regenerate and shuffle questions for a new game
+            generateQuestions(); // Regenerate and shuffle ALL questions for a new game
+            // totalQuestionsElement.textContent will be updated by generateQuestions -> updateScoreDisplay
+            updateScoreDisplay();
             displayQuestion();
         }
 
         // Event listeners
         nextButton.addEventListener('click', nextQuestion);
         restartButton.addEventListener('click', restartGame);
+        retestWrongButton.addEventListener('click', retestWrongQuestions);
 
         // Initialize the game when the window loads
         window.onload = function() {
             generateQuestions();
+            updateScoreDisplay(); // Initialize score display on load
             displayQuestion();
         };
     </script>
