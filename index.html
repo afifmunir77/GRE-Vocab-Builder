@@ -42,7 +42,19 @@
         <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-3xl border border-gray-200">
             <h1 class="text-4xl font-extrabold text-center mb-8 text-gray-900 leading-tight">GRE Vocab Builder</h1>
 
-            <div id="question-area" class="mb-8 text-center bg-gray-50 p-6 rounded-lg border border-gray-100">
+            <div id="settings-area" class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                <div class="flex items-center mb-2">
+                    <input type="checkbox" id="practiceSpecificWordsCheckbox" class="mr-2 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <label for="practiceSpecificWordsCheckbox" class="text-gray-700 font-medium">Practice Specific Words</label>
+                </div>
+                <select id="specificWordsSelector" multiple class="mt-1 p-2 border border-gray-300 rounded-md w-full md:w-3/4 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" style="display:none; height: 150px;"></select>
+            </div>
+
+            <div class="text-center mb-6">
+                <button id="start-game-button" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300">Start Game</button>
+            </div>
+
+            <div id="question-area" class="mb-8 text-center bg-gray-50 p-6 rounded-lg border border-gray-100" style="display: none;">
                 <p id="question-text" class="text-2xl text-gray-800 mb-6 font-medium"></p>
                 <div id="options-container" class="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <!-- Options will be dynamically inserted here -->
@@ -98,7 +110,27 @@
             { word: 'ALLOY', meaning: 'A COMBINATION; A MIXTURE OF TWO OR MORE METALS' },
             { word: 'ALLURE', meaning: 'THE POWER TO ENTICE BY CHARM' },
             { word: 'AMALGAMATE', meaning: 'TO COMBINE INTO A UNIFIED WHOLE' },
-            { word: 'AMBIGUOUS', meaning: 'UNCLEAR OR DOUBTFUL IN MEANING' }
+            { word: 'AMBIGUOUS', meaning: 'UNCLEAR OR DOUBTFUL IN MEANING' },
+            { word: 'AMBIVALENCE', meaning: 'THE STATE OF HAVING CONFLICTING EMOTIONAL ATTITUDES' },
+            { word: 'AMBROSIA', meaning: 'SOMETHING DELICIOUS; THE FOOD OF THE GODS' },
+            { word: 'AMELIORATE', meaning: 'TO IMPROVE' },
+            { word: 'AMENABLE', meaning: 'AGREEABLE; COOPERATIVE; SUITED' },
+            { word: 'AMENITY', meaning: 'SOMETHING THAT INCREASES COMFORT' },
+            { word: 'AMULET', meaning: 'ORNAMENT WORN AS A CHARM AGAINST EVIL SPIRITS' },
+            { word: 'ANACHRONISM', meaning: 'SOMETHING OUT OF THE PROPER TIME' },
+            { word: 'ANALGESIC', meaning: 'MEDICATION THAT REDUCES OR ELIMINATES PAIN' },
+            { word: 'ANALOGOUS', meaning: 'ADJ. COMPARABLE, N. A SIMILARITY IN SOME WAYS BETWEEN THINGS THAT ARE OTHERWISE DISSIMILAR (ANALOGY)' },
+            { word: 'ANARCHY', meaning: 'N. ABSENCE OF GOVERNMENT: STATE OF DISORDER, ADJ. LACKING ORDER OR CONTROL (ANARCHIC)' },
+            { word: 'ANODYNE', meaning: 'N. SOMETHING THAT CALMS OR SOOTHES PAIN, ADJ. RELAXING' },
+            { word: 'ANOMALOUS', meaning: 'IRREGULAR; DEVIATING FROM THE NORM' },
+            { word: 'ANTECEDENT', meaning: 'SOMETHING THAT COMES BEFORE' },
+            { word: 'ANTEDILUVIAN', meaning: 'PREHISTORIC' },
+            { word: 'ANTIPATHY', meaning: 'DISLIKE; HOSTILITY' },
+            { word: 'APATHY', meaning: 'INDIFFERENCE' },
+            { word: 'APEX', meaning: 'THE HIGHEST POINT' },
+            { word: 'APOGEE', meaning: 'THE POINT IN AN ORBIT MOST DISTANT FROM THE BODY BEING ORBITED; THE HIGHEST POINT' },
+            { word: 'APOTHEGM', meaning: 'A TERSE, WITTY SAYING' },
+            { word: 'APPEASE', meaning: 'TO CALM; PACIFY; PLACATE' }
         ];
 
         // Sentences for fill-in-the-blanks. Each word has two sentences.
@@ -162,7 +194,47 @@
             { word: 'AMALGAMATE', sentence: 'The two companies decided to ____ into one large corporation.' },
             { word: 'AMALGAMATE', sentence: 'We need to ____ these different ideas into a cohesive plan.' },
             { word: 'AMBIGUOUS', sentence: 'The instructions were ____, making it difficult to understand the task.' },
-            { word: 'AMBIGUOUS', sentence: 'His response was ____, leaving us unsure of his true feelings.' }
+            { word: 'AMBIGUOUS', sentence: 'His response was ____, leaving us unsure of his true feelings.' },
+            { word: 'AMBIVALENCE', sentence: 'Her ____ about the job offer made her hesitate to accept.' },
+            { word: 'AMBIVALENCE', sentence: 'He expressed ____ towards the new policy, neither fully supporting nor opposing it.' },
+            { word: 'AMBROSIA', sentence: 'The dessert was pure ____, a delight to the senses.' },
+            { word: 'AMBROSIA', sentence: 'The nectar and ____ of the gods were said to grant immortality.' },
+            { word: 'AMELIORATE', sentence: 'Efforts were made to ____ the living conditions in the refugee camp.' },
+            { word: 'AMELIORATE', sentence: 'He hoped the new law would ____ the suffering of the poor.' },
+            { word: 'AMENABLE', sentence: 'The team was ____ to suggestions for improving the process.' },
+            { word: 'AMENABLE', sentence: 'She found him very ____ to reason, willing to listen and compromise.' },
+            { word: 'AMENITY', sentence: 'The hotel offered many ____, including a spa and a swimming pool.' },
+            { word: 'AMENITY', sentence: 'A quiet park is a welcome ____ in a bustling city.' },
+            { word: 'AMULET', sentence: 'She wore an ____ around her neck for protection against evil.' },
+            { word: 'AMULET', sentence: 'The ancient warrior believed his ____ would bring him victory in battle.' },
+            { word: 'ANACHRONISM', sentence: 'A knight in shining armor using a smartphone would be an ____.' },
+            { word: 'ANACHRONISM', sentence: 'The old typewriter in the modern office was a charming ____.' },
+            { word: 'ANALGESIC', sentence: 'The doctor prescribed an ____ to relieve his severe headache.' },
+            { word: 'ANALGESIC', sentence: 'Topical ____ creams can help soothe muscle pain.' },
+            { word: 'ANALOGOUS', sentence: 'The human heart is ____ to a pump, circulating blood throughout the body.' },
+            { word: 'ANALOGOUS', sentence: 'The situation in the two countries was ____, with similar economic challenges.' },
+            { word: 'ANARCHY', sentence: 'Without a strong leader, the group descended into ____.' },
+            { word: 'ANARCHY', sentence: 'The sudden collapse of the government led to widespread ____.' },
+            { word: 'ANODYNE', sentence: 'For some, classical music is an ____, calming their nerves.' },
+            { word: 'ANODYNE', sentence: 'The simple pleasure of reading was an ____ for her troubled mind.' },
+            { word: 'ANOMALOUS', sentence: 'The discovery of a planet without a star was considered ____.' },
+            { word: 'ANOMALOUS', sentence: 'His ____ absence from work raised concerns among his colleagues.' },
+            { word: 'ANTECEDENT', sentence: 'The invention of the printing press was an important ____ to the spread of literacy.' },
+            { word: 'ANTECEDENT', sentence: 'His poor diet was an ____ to his current health problems.' },
+            { word: 'ANTEDILUVIAN', sentence: 'His views on gender roles were positively ____.' },
+            { word: 'ANTEDILUVIAN', sentence: 'The museum displayed ____ artifacts from the earliest civilizations.' },
+            { word: 'ANTIPATHY', sentence: 'There was a strong ____ between the rival factions.' },
+            { word: 'ANTIPATHY', sentence: 'His natural ____ towards public speaking made him avoid presentations.' },
+            { word: 'APATHY', sentence: 'The widespread ____ among voters led to a low turnout.' },
+            { word: 'APATHY', sentence: 'He showed complete ____ towards the suffering of others.' },
+            { word: 'APEX', sentence: 'At the ____ of his career, he was considered the best in his field.' },
+            { word: 'APEX', sentence: 'The climber reached the ____ of the mountain just before sunset.' },
+            { word: 'APOGEE', sentence: 'The satellite reached its ____, its furthest point from Earth.' },
+            { word: 'APOGEE', sentence: 'Her performance marked the ____ of her artistic achievements.' },
+            { word: 'APOTHEGM', sentence: 'Benjamin Franklin was known for his wise ____.' },
+            { word: 'APOTHEGM', sentence: 'The speaker ended his address with a memorable ____.' },
+            { word: 'APPEASE', sentence: 'He tried to ____ the angry crowd with promises of reform.' },
+            { word: 'APPEASE', sentence: 'To ____ a crying baby, sometimes all you need is a warm bottle.' }
         ];
 
         let questions = [];
@@ -185,7 +257,24 @@
         const finalScoreCorrectElement = document.getElementById('final-score-correct');
         const finalScoreWrongElement = document.getElementById('final-score-wrong');
         const finalScoreTotalElement = document.getElementById('final-score-total');
+        const practiceSpecificWordsCheckbox = document.getElementById('practiceSpecificWordsCheckbox');
+        const specificWordsSelector = document.getElementById('specificWordsSelector');
+        const startGameButton = document.getElementById('start-game-button');
+        const settingsArea = document.getElementById('settings-area');
+        const questionArea = document.getElementById('question-area'); // Already defined, but good to note its role here
 
+
+        /**
+         * Populates the specific words selector dropdown with words from wordsData.
+         */
+        function populateWordSelector() {
+            wordsData.forEach(wordObj => {
+                const option = document.createElement('option');
+                option.value = wordObj.word;
+                option.textContent = wordObj.word;
+                specificWordsSelector.appendChild(option);
+            });
+        }
 
         /**
          * Shuffles an array in place using the Fisher-Yates (Knuth) shuffle algorithm.
@@ -205,22 +294,83 @@
          */
         function generateQuestions() {
             questions = [];
-            const shuffledSentences = shuffleArray([...sentences]); // Shuffle all sentences
+            let sourceSentences = [...sentences];
+            let sourceWordsForOptions = wordsData.map(w => w.word);
 
-            shuffledSentences.forEach(qData => {
+            if (practiceSpecificWordsCheckbox.checked) {
+                const selectedWords = Array.from(specificWordsSelector.selectedOptions).map(opt => opt.value);
+                if (selectedWords.length > 0) {
+                    sourceSentences = sentences.filter(s => selectedWords.includes(s.word));
+                    // Use selected words for options primarily
+                    sourceWordsForOptions = [...selectedWords];
+                } else {
+                    // If checkbox is checked but no words selected, maybe revert to all or show a message?
+                    // For now, it will result in 0 questions if no words are selected.
+                    // Or, we can default to all wordsData if selectedWords is empty.
+                    // Let's default to no questions if specific is checked but none selected.
+                    sourceSentences = [];
+                }
+            }
+
+            if (sourceSentences.length === 0 && practiceSpecificWordsCheckbox.checked) {
+                 // If specific practice is chosen but no words are selected or no sentences match,
+                 // display a message or handle appropriately. For now, no questions will be generated.
+                 // We could alert the user here.
+                 alert("Please select at least one word for specific practice, or uncheck the 'Practice Specific Words' box.");
+                 totalQuestionsElement.textContent = 0;
+                 // Potentially hide question area and show a message
+                 questionArea.style.display = 'none';
+                 feedbackArea.textContent = 'No words selected for practice.';
+                 nextButton.style.display = 'none';
+                 currentScoreDisplay.style.display = 'none';
+                 // Ensure start button and settings are visible if we bail here
+                 startGameButton.style.display = 'block';
+                 settingsArea.style.display = 'block';
+                 return false; // Indicate failure to generate questions
+            } else if (sourceSentences.length === 0) {
+                // This case should ideally not happen if not specific practice, means sentences array is empty
+                alert("No sentences available to generate questions.");
+                totalQuestionsElement.textContent = 0;
+                // Ensure start button and settings are visible if we bail here
+                startGameButton.style.display = 'block';
+                settingsArea.style.display = 'block';
+                return false; // Indicate failure to generate questions
+            }
+
+
+            const shuffledSourceSentences = shuffleArray(sourceSentences);
+
+            shuffledSourceSentences.forEach(qData => {
                 const correctAnswer = qData.word;
-                let options = [correctAnswer]; // Start with the correct answer
+                let options = [correctAnswer];
 
-                // Get all other words excluding the correct one
-                const otherWords = wordsData.filter(w => w.word !== correctAnswer).map(w => w.word);
-                const shuffledOtherWords = shuffleArray(otherWords);
+                // Get potential incorrect options
+                let potentialDistractors = sourceWordsForOptions.filter(w => w !== correctAnswer);
 
-                // Add 3 random incorrect options
-                for (let i = 0; options.length < 4 && i < shuffledOtherWords.length; i++) {
-                    options.push(shuffledOtherWords[i]);
+                // If sourceWordsForOptions (selected words) are not enough, add from general pool
+                if (potentialDistractors.length < 3) {
+                    const generalDistractors = wordsData.map(w => w.word).filter(w => w !== correctAnswer && !potentialDistractors.includes(w));
+                    potentialDistractors.push(...shuffleArray(generalDistractors));
                 }
 
-                // Shuffle the options for the current question
+                potentialDistractors = shuffleArray(potentialDistractors);
+
+                for (let i = 0; options.length < 4 && i < potentialDistractors.length; i++) {
+                    if (!options.includes(potentialDistractors[i])) { // Ensure no duplicate options
+                         options.push(potentialDistractors[i]);
+                    }
+                }
+
+                // If after all that, we still don't have 4 options (e.g. very few total words)
+                // This is an edge case, might need more robust handling if total word pool is tiny
+                while(options.length < 4 && wordsData.length >= 4) {
+                    let emergencyOption = wordsData[Math.floor(Math.random() * wordsData.length)].word;
+                    if (!options.includes(emergencyOption)) {
+                        options.push(emergencyOption);
+                    }
+                }
+
+
                 options = shuffleArray(options);
 
                 questions.push({
@@ -230,23 +380,35 @@
                 });
             });
             totalQuestionsElement.textContent = questions.length;
+            // Ensure game area is visible if it was hidden due to no selection
+            // This logic will be moved to startGame function
+            // if(questions.length > 0) {
+            //     questionArea.style.display = 'block';
+            //     currentScoreDisplay.style.display = 'flex';
+            // }
+            return true; // Indicate success
         }
 
         /**
          * Displays the current question and its options.
          */
         function displayQuestion() {
-            feedbackArea.textContent = ''; // Clear previous feedback
-            nextButton.style.display = 'none'; // Hide next button
+            feedbackArea.textContent = '';
+            nextButton.style.display = 'none';
 
             if (currentQuestionIndex >= questions.length) {
                 endGame();
                 return;
             }
+            // Ensure question area is visible when a question is displayed
+            questionArea.style.display = 'block';
+            currentScoreDisplay.style.display = 'flex'; // or 'block'
+            feedbackArea.style.display = 'block';
+
 
             const question = questions[currentQuestionIndex];
             questionTextElement.textContent = question.sentence;
-            optionsContainer.innerHTML = ''; // Clear previous options
+            optionsContainer.innerHTML = '';
 
             question.options.forEach(option => {
                 const button = document.createElement('button');
@@ -330,7 +492,7 @@
             questionArea.style.display = 'none';
             feedbackArea.style.display = 'none';
             nextButton.style.display = 'none';
-            currentScoreDisplay.style.display = 'none'; // Hide current score display
+            currentScoreDisplay.style.display = 'none';
 
             gameOverMessage.style.display = 'block';
             finalScoreCorrectElement.textContent = correctAnswers;
@@ -380,31 +542,64 @@
             currentQuestionIndex = 0;
             correctAnswers = 0;
             wrongAnswers = 0;
-            wronglyAnsweredQuestions = []; // Clear wrongly answered questions
-            // score = 0; // Not needed anymore
-            questionArea.style.display = 'block';
-            feedbackArea.style.display = 'block';
+            wronglyAnsweredQuestions = [];
+
             gameOverMessage.style.display = 'none';
             restartButton.style.display = 'none';
-            retestWrongButton.style.display = 'none'; // Hide retest button
-            currentScoreDisplay.style.display = 'flex'; // Show score display again
+            retestWrongButton.style.display = 'none';
 
-            generateQuestions(); // Regenerate and shuffle ALL questions for a new game
-            // totalQuestionsElement.textContent will be updated by generateQuestions -> updateScoreDisplay
-            updateScoreDisplay();
-            displayQuestion();
+            // Show settings and start button, hide game elements
+            settingsArea.style.display = 'block';
+            startGameButton.style.display = 'block';
+            questionArea.style.display = 'none';
+            feedbackArea.style.display = 'none';
+            currentScoreDisplay.style.display = 'none';
+            nextButton.style.display = 'none';
+             // No automatic question generation here, wait for user to click "Start Game"
+        }
+
+        function startGame() {
+            if (generateQuestions()) { // generateQuestions now returns true on success, false on failure (e.g. no words selected)
+                updateScoreDisplay();
+                displayQuestion();
+
+                // Hide settings and start button, show game elements
+                settingsArea.style.display = 'none';
+                startGameButton.style.display = 'none';
+                questionArea.style.display = 'block';
+                feedbackArea.style.display = 'block'; // Will be cleared by displayQuestion
+                currentScoreDisplay.style.display = 'flex'; // Or 'block'
+                // Next button is shown after an answer
+            }
+            // If generateQuestions returned false, an alert was already shown, and UI remains in pre-game state.
         }
 
         // Event listeners
         nextButton.addEventListener('click', nextQuestion);
         restartButton.addEventListener('click', restartGame);
         retestWrongButton.addEventListener('click', retestWrongQuestions);
+        startGameButton.addEventListener('click', startGame);
+        practiceSpecificWordsCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                specificWordsSelector.style.display = 'block';
+            } else {
+                specificWordsSelector.style.display = 'none';
+            }
+        });
 
-        // Initialize the game when the window loads
+        // Initialize settings when the window loads
         window.onload = function() {
-            generateQuestions();
-            updateScoreDisplay(); // Initialize score display on load
-            displayQuestion();
+            populateWordSelector();
+            // Initial UI State: Show settings and start button, hide game elements
+            settingsArea.style.display = 'block';
+            startGameButton.style.display = 'block';
+            questionArea.style.display = 'none';
+            feedbackArea.style.display = 'none';
+            currentScoreDisplay.style.display = 'none';
+            nextButton.style.display = 'none';
+            restartButton.style.display = 'none';
+            retestWrongButton.style.display = 'none';
+            gameOverMessage.style.display = 'none';
         };
     </script>
 </body>
