@@ -48,10 +48,35 @@
                     <label for="practiceSpecificWordsCheckbox" class="text-gray-700 font-medium">Practice Specific Words</label>
                 </div>
                 <select id="specificWordsSelector" multiple class="mt-1 p-2 border border-gray-300 rounded-md w-full md:w-3/4 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" style="display:none; height: 150px;"></select>
+
+                <!-- Lowest Time Mode -->
+                <div class="flex items-center mt-4 mb-2">
+                    <input type="checkbox" id="lowestTimeCheckbox" class="mr-2 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <label for="lowestTimeCheckbox" class="text-gray-700 font-medium">Lowest Time</label>
+                </div>
+                <div id="lowestTimeOptions" style="display:none;" class="pl-7">
+                    <label for="fillInsCount" class="text-sm text-gray-600">Number of fill-ins to practice:</label>
+                    <input type="number" id="fillInsCount" min="1" value="10" class="mt-1 p-2 border border-gray-300 rounded-md w-full md:w-1/4 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                </div>
+
+                <!-- Highest Score Mode -->
+                <div class="flex items-center mt-4 mb-2">
+                    <input type="checkbox" id="highestScoreCheckbox" class="mr-2 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <label for="highestScoreCheckbox" class="text-gray-700 font-medium">Highest Score</label>
+                </div>
+                <div id="highestScoreOptions" style="display:none;" class="pl-7">
+                    <label for="timeDuration" class="text-sm text-gray-600">Practice duration (in minutes):</label>
+                    <input type="number" id="timeDuration" min="1" value="1" class="mt-1 p-2 border border-gray-300 rounded-md w-full md:w-1/4 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50">
+                </div>
             </div>
 
             <div class="text-center mb-6">
                 <button id="start-game-button" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300">Start Game</button>
+            </div>
+
+            <div id="game-info-area" class="text-center text-xl font-bold mb-4 h-8">
+                <span id="timer-display"></span>
+                <span id="record-display"></span>
             </div>
 
             <div id="question-area" class="mb-8 text-center bg-gray-50 p-6 rounded-lg border border-gray-100" style="display: none;">
@@ -663,8 +688,18 @@
         let correctAnswers = 0;
         let wrongAnswers = 0;
         let wronglyAnsweredQuestions = [];
+        let timerInterval;
+        let gameMode = 'standard'; // 'standard', 'lowestTime', 'highestScore'
 
         // Get DOM elements
+        const lowestTimeCheckbox = document.getElementById('lowestTimeCheckbox');
+        const highestScoreCheckbox = document.getElementById('highestScoreCheckbox');
+        const lowestTimeOptions = document.getElementById('lowestTimeOptions');
+        const highestScoreOptions = document.getElementById('highestScoreOptions');
+        const fillInsCount = document.getElementById('fillInsCount');
+        const timeDuration = document.getElementById('timeDuration');
+        const timerDisplay = document.getElementById('timer-display');
+        const recordDisplay = document.getElementById('record-display');
         const questionTextElement = document.getElementById('question-text');
         const optionsContainer = document.getElementById('options-container');
         const feedbackArea = document.getElementById('feedback-area');
@@ -682,7 +717,48 @@
         const startGameButton = document.getElementById('start-game-button');
         const settingsArea = document.getElementById('settings-area');
         const questionArea = document.getElementById('question-area'); // Already defined, but good to note its role here
+        let startTime;
 
+        /**
+         * Formats seconds into MM:SS format.
+         */
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+        }
+
+        /**
+         * Retrieves lowest times from localStorage.
+         */
+        function getLowestTimes() {
+            return JSON.parse(localStorage.getItem('lowestTimes')) || {};
+        }
+
+        /**
+         * Saves a new lowest time to localStorage.
+         */
+        function saveLowestTime(count, time) {
+            const lowestTimes = getLowestTimes();
+            lowestTimes[count] = time;
+            localStorage.setItem('lowestTimes', JSON.stringify(lowestTimes));
+        }
+
+        /**
+         * Retrieves highest scores from localStorage.
+         */
+        function getHighestScores() {
+            return JSON.parse(localStorage.getItem('highestScores')) || {};
+        }
+
+        /**
+         * Saves a new highest score to localStorage.
+         */
+        function saveHighestScore(duration, score) {
+            const highestScores = getHighestScores();
+            highestScores[duration] = score;
+            localStorage.setItem('highestScores', JSON.stringify(highestScores));
+        }
 
         /**
          * Populates the specific words selector dropdown with words from wordsData.
@@ -799,6 +875,14 @@
                     options: options
                 });
             });
+
+            if (gameMode === 'lowestTime') {
+                const count = parseInt(fillInsCount.value, 10);
+                if (questions.length > count) {
+                    questions = questions.slice(0, count);
+                }
+            }
+
             totalQuestionsElement.textContent = questions.length;
             // Ensure game area is visible if it was hidden due to no selection
             // This logic will be moved to startGame function
@@ -879,6 +963,7 @@
                     wronglyAnsweredQuestions.push(questions[currentQuestionIndex]);
                 }
 
+
                 // Highlight the correct answer
                 document.querySelectorAll('.option-button').forEach(button => {
                     if (button.textContent === correctAnswer) {
@@ -887,7 +972,11 @@
                 });
             }
             updateScoreDisplay();
-            nextButton.style.display = 'block'; // Show next button
+            if (gameMode === 'highestScore') {
+                setTimeout(nextQuestion, 500); // Automatically go to the next question
+            } else {
+                nextButton.style.display = 'block'; // Show next button for other modes
+            }
         }
 
         /**
@@ -909,15 +998,77 @@
          * Ends the game and displays the final score.
          */
         function endGame() {
+            clearInterval(timerInterval);
+
+            if (gameMode === 'lowestTime') {
+                questionArea.style.display = 'none';
+                feedbackArea.style.display = 'none';
+                nextButton.style.display = 'none';
+                currentScoreDisplay.style.display = 'none';
+                timerDisplay.textContent = '';
+
+                const timeTaken = Math.round((Date.now() - startTime) / 1000);
+                const count = fillInsCount.value;
+
+                let message = `You completed ${count} fill-ins in ${formatTime(timeTaken)} with ${wrongAnswers} mistake(s).`;
+
+                if (wrongAnswers > 0) {
+                    message += `<br>You cannot save your time because you made mistakes.`;
+                } else {
+                    const lowestTimes = getLowestTimes();
+                    const bestTime = lowestTimes[count];
+
+                    if (bestTime === undefined || timeTaken < bestTime) {
+                        message += ` This is a new record!`;
+                        if (confirm(message + " Save this time?")) {
+                            saveLowestTime(count, timeTaken);
+                            recordDisplay.textContent = `New Best Time: ${formatTime(timeTaken)}`;
+                        }
+                    } else {
+                        message += `<br>Your best time is ${formatTime(bestTime)}. You were ${formatTime(timeTaken - bestTime)} slower.`;
+                    }
+                }
+                gameOverMessage.innerHTML = message;
+
+                gameOverMessage.style.display = 'block';
+                restartButton.style.display = 'block';
+                return;
+            } else if (gameMode === 'highestScore') {
+                questionArea.style.display = 'none';
+                feedbackArea.style.display = 'none';
+                nextButton.style.display = 'none';
+                currentScoreDisplay.style.display = 'none';
+                timerDisplay.textContent = "Time's up!";
+
+                const duration = timeDuration.value;
+                const highestScores = getHighestScores();
+                const bestScore = highestScores[duration];
+
+                let message = `You scored ${correctAnswers} in ${duration} minute(s).`;
+                if (bestScore === undefined || correctAnswers > bestScore) {
+                    message += ` This is a new high score!`;
+                    if (confirm(message + " Save this score?")) {
+                        saveHighestScore(duration, correctAnswers);
+                        recordDisplay.textContent = `New Best Score: ${correctAnswers}`;
+                    }
+                } else {
+                    message += `<br>The highest score is ${bestScore}. You were off by ${bestScore - correctAnswers}.`;
+                }
+                gameOverMessage.innerHTML = message;
+                gameOverMessage.style.display = 'block';
+                restartButton.style.display = 'block';
+                return;
+            }
+
             questionArea.style.display = 'none';
             feedbackArea.style.display = 'none';
             nextButton.style.display = 'none';
             currentScoreDisplay.style.display = 'none';
 
             gameOverMessage.style.display = 'block';
-            finalScoreCorrectElement.textContent = correctAnswers;
-            finalScoreWrongElement.textContent = wrongAnswers;
-            finalScoreTotalElement.textContent = questions.length; // This should be original total or retest total
+            document.getElementById('final-score-correct').textContent = correctAnswers;
+            document.getElementById('final-score-wrong').textContent = wrongAnswers;
+            document.getElementById('final-score-total').textContent = questions.length;
             restartButton.style.display = 'block';
 
             if (wronglyAnsweredQuestions.length > 0) {
@@ -959,14 +1110,25 @@
          * Resets the game to its initial state.
          */
         function restartGame() {
+            clearInterval(timerInterval);
             currentQuestionIndex = 0;
             correctAnswers = 0;
             wrongAnswers = 0;
             wronglyAnsweredQuestions = [];
 
             gameOverMessage.style.display = 'none';
+            gameOverMessage.innerHTML = `Game Over! Your final score is <span id="final-score-correct" class="text-green-600">0</span>-<span id="final-score-wrong" class="text-red-600">0</span> out of <span id="final-score-total" class="text-gray-600">0</span>.`;
             restartButton.style.display = 'none';
             retestWrongButton.style.display = 'none';
+            timerDisplay.textContent = '';
+            recordDisplay.textContent = '';
+
+            // Reset game mode selection
+            gameMode = 'standard';
+            lowestTimeCheckbox.checked = false;
+            highestScoreCheckbox.checked = false;
+            lowestTimeOptions.style.display = 'none';
+            highestScoreOptions.style.display = 'none';
 
             // Show settings and start button, hide game elements
             settingsArea.style.display = 'block';
@@ -975,11 +1137,10 @@
             feedbackArea.style.display = 'none';
             currentScoreDisplay.style.display = 'none';
             nextButton.style.display = 'none';
-             // No automatic question generation here, wait for user to click "Start Game"
         }
 
         function startGame() {
-            if (generateQuestions()) { // generateQuestions now returns true on success, false on failure (e.g. no words selected)
+            if (generateQuestions()) {
                 updateScoreDisplay();
                 displayQuestion();
 
@@ -987,11 +1148,46 @@
                 settingsArea.style.display = 'none';
                 startGameButton.style.display = 'none';
                 questionArea.style.display = 'block';
-                feedbackArea.style.display = 'block'; // Will be cleared by displayQuestion
-                currentScoreDisplay.style.display = 'flex'; // Or 'block'
-                // Next button is shown after an answer
+                feedbackArea.style.display = 'block';
+                currentScoreDisplay.style.display = 'flex';
+
+                if (gameMode === 'lowestTime') {
+                    startTime = Date.now();
+                    timerInterval = setInterval(() => {
+                        const seconds = Math.floor((Date.now() - startTime) / 1000);
+                        timerDisplay.textContent = `Time: ${formatTime(seconds)}`;
+                    }, 1000);
+
+                    const count = fillInsCount.value;
+                    const lowestTimes = getLowestTimes();
+                    if (lowestTimes[count]) {
+                        recordDisplay.textContent = `Best Time for ${count}: ${formatTime(lowestTimes[count])}`;
+                    } else {
+                        recordDisplay.textContent = `No record for ${count} yet.`;
+                    }
+                } else if (gameMode === 'highestScore') {
+                    const durationMinutes = parseInt(timeDuration.value, 10);
+                    let timeLeft = durationMinutes * 60;
+
+                    timerDisplay.textContent = `Time Left: ${formatTime(timeLeft)}`;
+
+                    timerInterval = setInterval(() => {
+                        timeLeft--;
+                        timerDisplay.textContent = `Time Left: ${formatTime(timeLeft)}`;
+                        if (timeLeft <= 0) {
+                            clearInterval(timerInterval);
+                            endGame();
+                        }
+                    }, 1000);
+
+                    const highestScores = getHighestScores();
+                    if (highestScores[durationMinutes]) {
+                        recordDisplay.textContent = `Best Score for ${durationMinutes} min: ${highestScores[durationMinutes]}`;
+                    } else {
+                        recordDisplay.textContent = `No record for ${durationMinutes} min yet.`;
+                    }
+                }
             }
-            // If generateQuestions returned false, an alert was already shown, and UI remains in pre-game state.
         }
 
         // Event listeners
@@ -1004,6 +1200,30 @@
                 specificWordsSelector.style.display = 'block';
             } else {
                 specificWordsSelector.style.display = 'none';
+            }
+        });
+
+        lowestTimeCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                gameMode = 'lowestTime';
+                lowestTimeOptions.style.display = 'block';
+                highestScoreCheckbox.checked = false;
+                highestScoreOptions.style.display = 'none';
+            } else {
+                gameMode = 'standard';
+                lowestTimeOptions.style.display = 'none';
+            }
+        });
+
+        highestScoreCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                gameMode = 'highestScore';
+                highestScoreOptions.style.display = 'block';
+                lowestTimeCheckbox.checked = false;
+                lowestTimeOptions.style.display = 'none';
+            } else {
+                gameMode = 'standard';
+                highestScoreOptions.style.display = 'none';
             }
         });
 
