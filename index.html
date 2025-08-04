@@ -721,7 +721,7 @@
         let wrongAnswers = 0;
         let wronglyAnsweredQuestions = [];
         let timerInterval;
-        let gameMode = 'standard'; // 'standard', 'lowestTime', 'highestScore'
+        let timeLeft = 0;
 
         // Get DOM elements
         const lowestTimeCheckbox = document.getElementById('lowestTimeCheckbox');
@@ -762,37 +762,32 @@
             return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
         }
 
-        /**
-         * Retrieves lowest times from localStorage.
-         */
-        function getLowestTimes() {
-            return JSON.parse(localStorage.getItem('lowestTimes')) || {};
+        // --- localStorage Record Management ---
+
+        function getLowestTimes(specific = false) {
+            const key = specific ? 'lowestTimes_specific' : 'lowestTimes';
+            return JSON.parse(localStorage.getItem(key)) || {};
         }
 
-        /**
-         * Saves a new lowest time to localStorage.
-         */
-        function saveLowestTime(count, time) {
-            const lowestTimes = getLowestTimes();
+        function saveLowestTime(count, time, specific = false) {
+            const key = specific ? 'lowestTimes_specific' : 'lowestTimes';
+            const lowestTimes = getLowestTimes(specific);
             lowestTimes[count] = time;
-            localStorage.setItem('lowestTimes', JSON.stringify(lowestTimes));
+            localStorage.setItem(key, JSON.stringify(lowestTimes));
         }
 
-        /**
-         * Retrieves highest scores from localStorage.
-         */
-        function getHighestScores() {
-            return JSON.parse(localStorage.getItem('highestScores')) || {};
+        function getHighestScores(specific = false) {
+            const key = specific ? 'highestScores_v2_specific' : 'highestScores_v2';
+            return JSON.parse(localStorage.getItem(key)) || {};
         }
 
-        /**
-         * Saves a new highest score to localStorage.
-         */
-        function saveHighestScore(duration, score) {
-            const highestScores = getHighestScores();
+        function saveHighestScore(duration, score, specific = false) {
+            const key = specific ? 'highestScores_v2_specific' : 'highestScores_v2';
+            const highestScores = getHighestScores(specific);
             highestScores[duration] = score;
-            localStorage.setItem('highestScores', JSON.stringify(highestScores));
+            localStorage.setItem(key, JSON.stringify(highestScores));
         }
+
 
         /**
          * Populates the specific words selector dropdown with words from wordsData.
@@ -826,45 +821,22 @@
             questions = [];
             let sourceSentences = [...sentences];
             let sourceWordsForOptions = wordsData.map(w => w.word);
+            const isSpecific = practiceSpecificWordsCheckbox.checked;
 
-            if (practiceSpecificWordsCheckbox.checked) {
+            if (isSpecific) {
                 const selectedWords = Array.from(specificWordsSelector.selectedOptions).map(opt => opt.value);
                 if (selectedWords.length > 0) {
                     sourceSentences = sentences.filter(s => selectedWords.includes(s.word));
-                    // Use selected words for options primarily
                     sourceWordsForOptions = [...selectedWords];
                 } else {
-                    // If checkbox is checked but no words selected, maybe revert to all or show a message?
-                    // For now, it will result in 0 questions if no words are selected.
-                    // Or, we can default to all wordsData if selectedWords is empty.
-                    // Let's default to no questions if specific is checked but none selected.
-                    sourceSentences = [];
+                    alert("Please select at least one word for specific practice, or uncheck the 'Practice Specific Words' box.");
+                    return false; // Indicate failure
                 }
             }
 
-            if (sourceSentences.length === 0 && practiceSpecificWordsCheckbox.checked) {
-                 // If specific practice is chosen but no words are selected or no sentences match,
-                 // display a message or handle appropriately. For now, no questions will be generated.
-                 // We could alert the user here.
-                 alert("Please select at least one word for specific practice, or uncheck the 'Practice Specific Words' box.");
-                 totalQuestionsElement.textContent = 0;
-                 // Potentially hide question area and show a message
-                 questionArea.style.display = 'none';
-                 feedbackArea.textContent = 'No words selected for practice.';
-                 nextButton.style.display = 'none';
-                 currentScoreDisplay.style.display = 'none';
-                 // Ensure start button and settings are visible if we bail here
-                 startGameButton.style.display = 'block';
-                 settingsArea.style.display = 'block';
-                 return false; // Indicate failure to generate questions
-            } else if (sourceSentences.length === 0) {
-                // This case should ideally not happen if not specific practice, means sentences array is empty
-                alert("No sentences available to generate questions.");
-                totalQuestionsElement.textContent = 0;
-                // Ensure start button and settings are visible if we bail here
-                startGameButton.style.display = 'block';
-                settingsArea.style.display = 'block';
-                return false; // Indicate failure to generate questions
+            if (sourceSentences.length === 0) {
+                 alert("No sentences available for the selected words.");
+                 return false;
             }
 
 
@@ -873,11 +845,8 @@
             shuffledSourceSentences.forEach(qData => {
                 const correctAnswer = qData.word;
                 let options = [correctAnswer];
-
-                // Get potential incorrect options
                 let potentialDistractors = sourceWordsForOptions.filter(w => w !== correctAnswer);
 
-                // If sourceWordsForOptions (selected words) are not enough, add from general pool
                 if (potentialDistractors.length < 3) {
                     const generalDistractors = wordsData.map(w => w.word).filter(w => w !== correctAnswer && !potentialDistractors.includes(w));
                     potentialDistractors.push(...shuffleArray(generalDistractors));
@@ -886,20 +855,17 @@
                 potentialDistractors = shuffleArray(potentialDistractors);
 
                 for (let i = 0; options.length < 4 && i < potentialDistractors.length; i++) {
-                    if (!options.includes(potentialDistractors[i])) { // Ensure no duplicate options
+                    if (!options.includes(potentialDistractors[i])) {
                          options.push(potentialDistractors[i]);
                     }
                 }
 
-                // If after all that, we still don't have 4 options (e.g. very few total words)
-                // This is an edge case, might need more robust handling if total word pool is tiny
                 while(options.length < 4 && wordsData.length >= 4) {
                     let emergencyOption = wordsData[Math.floor(Math.random() * wordsData.length)].word;
                     if (!options.includes(emergencyOption)) {
                         options.push(emergencyOption);
                     }
                 }
-
 
                 options = shuffleArray(options);
 
@@ -910,9 +876,7 @@
                 });
             });
 
-            if (practiceSpecificWordsCheckbox.checked) {
-                gameMode = 'specific';
-            } else if (gameMode === 'lowestTime') {
+            if (lowestTimeCheckbox.checked) {
                 const count = parseInt(fillInsCount.value, 10);
                 if (questions.length > count) {
                     questions = questions.slice(0, count);
@@ -920,12 +884,6 @@
             }
 
             totalQuestionsElement.textContent = questions.length;
-            // Ensure game area is visible if it was hidden due to no selection
-            // This logic will be moved to startGame function
-            // if(questions.length > 0) {
-            //     questionArea.style.display = 'block';
-            //     currentScoreDisplay.style.display = 'flex';
-            // }
             return true; // Indicate success
         }
 
@@ -937,14 +895,12 @@
             nextButton.style.display = 'none';
 
             if (currentQuestionIndex >= questions.length) {
-                endGame();
+                endGame(false); // Game ended by finishing questions, not by timeout
                 return;
             }
-            // Ensure question area is visible when a question is displayed
             questionArea.style.display = 'block';
-            currentScoreDisplay.style.display = 'flex'; // or 'block'
+            currentScoreDisplay.style.display = 'flex';
             feedbackArea.style.display = 'block';
-
 
             const question = questions[currentQuestionIndex];
             questionTextElement.textContent = question.sentence;
@@ -954,8 +910,7 @@
                 const button = document.createElement('button');
                 button.textContent = option;
                 button.classList.add(
-                    'option-button',
-                    'bg-blue-50', 'hover:bg-blue-100', 'text-blue-800', 'font-semibold',
+                    'option-button', 'bg-blue-50', 'hover:bg-blue-100', 'text-blue-800', 'font-semibold',
                     'py-3', 'px-4', 'rounded-lg', 'border', 'border-blue-200',
                     'transition', 'duration-200', 'ease-in-out', 'w-full', 'text-lg'
                 );
@@ -963,48 +918,35 @@
                 optionsContainer.appendChild(button);
             });
 
-            // Ensure all buttons are enabled for the new question
             document.querySelectorAll('.option-button').forEach(btn => {
                 btn.classList.remove('correct', 'incorrect', 'disabled');
-                btn.style.pointerEvents = 'auto'; // Re-enable pointer events
+                btn.style.pointerEvents = 'auto';
             });
         }
 
         /**
          * Checks the selected answer against the correct answer.
-         * @param {HTMLElement} selectedButton The button element that was clicked.
-         * @param {string} selectedOption The text content of the selected option.
-         * @param {string} correctAnswer The correct answer for the current question.
          */
         function checkAnswer(selectedButton, selectedOption, correctAnswer) {
-            // Disable all option buttons after a choice is made
             document.querySelectorAll('.option-button').forEach(button => {
                 button.classList.add('disabled');
-                button.style.pointerEvents = 'none'; // Ensure no more clicks
+                button.style.pointerEvents = 'none';
             });
 
             if (selectedOption === correctAnswer) {
-                // Correct Answer Logic
                 feedbackArea.innerHTML = '<span style="color: #10B981;">Correct!</span>';
                 selectedButton.classList.add('correct');
                 correctAnswers++;
                 updateScoreDisplay();
-                // Automatically load next question after a short delay
-                setTimeout(nextQuestion, 1000); // 1-second delay
+                setTimeout(nextQuestion, 1000);
             } else {
-                // Incorrect Answer Logic
                 wrongAnswers++;
                 selectedButton.classList.add('incorrect');
-
-                // Add to list of wrong questions if not already (for retest mode)
                 if (!wronglyAnsweredQuestions.find(q => q.sentence === questions[currentQuestionIndex].sentence)) {
                     wronglyAnsweredQuestions.push(questions[currentQuestionIndex]);
                 }
-
-                // Find meanings
                 const correctWordData = wordsData.find(w => w.word === correctAnswer);
                 const selectedWordData = wordsData.find(w => w.word === selectedOption);
-
                 let feedbackHTML = `
                     <div class="text-left text-sm">
                         <p class="mb-1"><strong style="color: #EF4444;">Your Answer: ${selectedOption}</strong></p>
@@ -1014,18 +956,13 @@
                         <p style="color: #10B981;" class="pl-2">- ${correctWordData ? correctWordData.meaning : 'Meaning not found.'}</p>
                     </div>
                 `;
-
                 feedbackArea.innerHTML = feedbackHTML;
-
-                // Highlight the correct answer button as well
                 document.querySelectorAll('.option-button').forEach(button => {
                     if (button.textContent === correctAnswer) {
                         button.classList.add('correct');
                     }
                 });
-
                 updateScoreDisplay();
-                // Show the "Next Question" button only on incorrect answers
                 nextButton.style.display = 'block';
             }
         }
@@ -1047,102 +984,87 @@
 
         /**
          * Ends the game and displays the final score.
+         * @param {boolean} timedOut - True if the game ended due to the timer running out.
          */
-        function endGame() {
+        function endGame(timedOut = false) {
             clearInterval(timerInterval);
-
-            if (gameMode === 'specific') {
-                questionArea.style.display = 'none';
-                feedbackArea.style.display = 'none';
-                nextButton.style.display = 'none';
-                currentScoreDisplay.style.display = 'none';
-                timerDisplay.textContent = '';
-
-                gameOverMessage.style.display = 'block';
-                document.getElementById('final-score-correct').textContent = correctAnswers;
-                document.getElementById('final-score-wrong').textContent = wrongAnswers;
-                document.getElementById('final-score-total').textContent = questions.length;
-                restartButton.style.display = 'block';
-
-                if (wronglyAnsweredQuestions.length > 0) {
-                    retestWrongButton.style.display = 'block';
-                } else {
-                    retestWrongButton.style.display = 'none';
-                }
-                return;
-            }
-
-            if (gameMode === 'lowestTime') {
-                questionArea.style.display = 'none';
-                feedbackArea.style.display = 'none';
-                nextButton.style.display = 'none';
-                currentScoreDisplay.style.display = 'none';
-                timerDisplay.textContent = '';
-
-                const timeTaken = Math.round((Date.now() - startTime) / 1000);
-                const count = fillInsCount.value;
-
-                let message = `You completed ${count} fill-ins in ${formatTime(timeTaken)} with ${wrongAnswers} mistake(s).`;
-
-                if (wrongAnswers > 0) {
-                    message += `<br>You cannot save your time because you made mistakes.`;
-                } else {
-                    const lowestTimes = getLowestTimes();
-                    const bestTime = lowestTimes[count];
-
-                    if (bestTime === undefined || timeTaken < bestTime) {
-                        message += ` This is a new record!`;
-                        if (confirm(message + " Save this time?")) {
-                            saveLowestTime(count, timeTaken);
-                            recordDisplay.textContent = `New Best Time: ${formatTime(timeTaken)}`;
-                        }
-                    } else {
-                        message += `<br>Your best time is ${formatTime(bestTime)}. You were ${formatTime(timeTaken - bestTime)} slower.`;
-                    }
-                }
-                gameOverMessage.innerHTML = message;
-
-                gameOverMessage.style.display = 'block';
-                restartButton.style.display = 'block';
-                return;
-            } else if (gameMode === 'highestScore') {
-                questionArea.style.display = 'none';
-                feedbackArea.style.display = 'none';
-                nextButton.style.display = 'none';
-                currentScoreDisplay.style.display = 'none';
-                timerDisplay.textContent = "Time's up!";
-
-                const duration = timeDuration.value;
-                const highestScores = getHighestScores();
-                const bestScore = highestScores[duration];
-
-                let message = `You scored ${correctAnswers} in ${duration} minute(s).`;
-                if (bestScore === undefined || correctAnswers > bestScore) {
-                    message += ` This is a new high score!`;
-                    if (confirm(message + " Save this score?")) {
-                        saveHighestScore(duration, correctAnswers);
-                        recordDisplay.textContent = `New Best Score: ${correctAnswers}`;
-                    }
-                } else {
-                    message += `<br>The highest score is ${bestScore}. You were off by ${bestScore - correctAnswers}.`;
-                }
-                gameOverMessage.innerHTML = message;
-                gameOverMessage.style.display = 'block';
-                restartButton.style.display = 'block';
-                return;
-            }
+            const isSpecific = practiceSpecificWordsCheckbox.checked;
 
             questionArea.style.display = 'none';
             feedbackArea.style.display = 'none';
             nextButton.style.display = 'none';
             currentScoreDisplay.style.display = 'none';
+            timerDisplay.textContent = '';
+            gameOverMessage.innerHTML = ''; // Clear previous message
+
+            if (lowestTimeCheckbox.checked) {
+                const timeTaken = Math.round((Date.now() - startTime) / 1000);
+                const count = fillInsCount.value;
+                let message = `You completed ${count} fill-ins in ${formatTime(timeTaken)} with ${wrongAnswers} mistake(s).`;
+
+                if (wrongAnswers > 0) {
+                    message += `<br>You cannot save your time because you made mistakes.`;
+                } else {
+                    const lowestTimes = getLowestTimes(isSpecific);
+                    const bestTime = lowestTimes[count];
+
+                    if (bestTime === undefined || timeTaken < bestTime) {
+                        message += ` This is a new record!`;
+                        if (confirm(message + " Save this time?")) {
+                            saveLowestTime(count, timeTaken, isSpecific);
+                            recordDisplay.textContent = `New Best Time: ${formatTime(timeTaken)}`;
+                        }
+                    } else {
+                        message += `<br>Your best time for this set is ${formatTime(bestTime)}.`;
+                    }
+                }
+                gameOverMessage.innerHTML = message;
+            } else if (highestScoreCheckbox.checked) {
+                const durationMinutes = parseInt(timeDuration.value, 10);
+                const remainingTime = timedOut ? 0 : timeLeft;
+                let message;
+
+                if (timedOut) {
+                    timerDisplay.textContent = "Time's up!";
+                    message = `Time's up! You scored ${correctAnswers} out of ${questions.length}.`;
+                } else {
+                    message = `You finished all ${questions.length} questions with ${formatTime(remainingTime)} remaining.`;
+                }
+
+                if (wrongAnswers > 0 && !timedOut) {
+                     message += `<br>You made ${wrongAnswers} mistake(s), so this score won't be recorded.`;
+                } else if (!timedOut) {
+                    const highestScores = getHighestScores(isSpecific);
+                    let recordKey = durationMinutes;
+                    if (isSpecific) {
+                        recordKey = durationMinutes + '_' + questions.length;
+                    }
+                    const bestScore = highestScores[recordKey];
+
+                    if (bestScore === undefined || remainingTime > bestScore) {
+                        message += ` This is a new high score!`;
+                        if (confirm(message + " Save this score?")) {
+                            highestScores[recordKey] = remainingTime;
+                            const storageKey = isSpecific ? 'highestScores_v2_specific' : 'highestScores_v2';
+                            localStorage.setItem(storageKey, JSON.stringify(highestScores));
+                            recordDisplay.textContent = `New Best Score: ${formatTime(remainingTime)} remaining`;
+                        }
+                    } else {
+                        message += `<br>The best score for this set is ${formatTime(bestScore)} remaining.`;
+                    }
+                }
+                gameOverMessage.innerHTML = message;
+            } else {
+                // Standard or Specific-only mode
+                gameOverMessage.style.display = 'block';
+                document.getElementById('final-score-correct').textContent = correctAnswers;
+                document.getElementById('final-score-wrong').textContent = wrongAnswers;
+                document.getElementById('final-score-total').textContent = questions.length;
+                gameOverMessage.innerHTML = `Game Over! Your final score is <span class="text-green-600">${correctAnswers}</span>-<span class="text-red-600">${wrongAnswers}</span> out of <span class="text-gray-600">${questions.length}</span>.`;
+            }
 
             gameOverMessage.style.display = 'block';
-            document.getElementById('final-score-correct').textContent = correctAnswers;
-            document.getElementById('final-score-wrong').textContent = wrongAnswers;
-            document.getElementById('final-score-total').textContent = questions.length;
             restartButton.style.display = 'block';
-
             if (wronglyAnsweredQuestions.length > 0) {
                 retestWrongButton.style.display = 'block';
             } else {
@@ -1156,12 +1078,11 @@
          */
         function retestWrongQuestions() {
             if (wronglyAnsweredQuestions.length === 0) {
-                // Fallback, though button shouldn't be visible
                 restartGame();
                 return;
             }
-            questions = [...wronglyAnsweredQuestions]; // Use a copy
-            wronglyAnsweredQuestions = []; // Clear for the next round of potential wrong answers in retest
+            questions = shuffleArray([...wronglyAnsweredQuestions]);
+            wronglyAnsweredQuestions = [];
             currentQuestionIndex = 0;
             correctAnswers = 0;
             wrongAnswers = 0;
@@ -1173,7 +1094,6 @@
             retestWrongButton.style.display = 'none';
             currentScoreDisplay.style.display = 'flex';
 
-            // totalQuestionsElement.textContent = questions.length; // Update total for retest - Handled by updateScoreDisplay
             updateScoreDisplay();
             displayQuestion();
         }
@@ -1187,22 +1107,14 @@
             correctAnswers = 0;
             wrongAnswers = 0;
             wronglyAnsweredQuestions = [];
+            timeLeft = 0;
 
             gameOverMessage.style.display = 'none';
-            gameOverMessage.innerHTML = `Game Over! Your final score is <span id="final-score-correct" class="text-green-600">0</span>-<span id="final-score-wrong" class="text-red-600">0</span> out of <span id="final-score-total" class="text-gray-600">0</span>.`;
             restartButton.style.display = 'none';
             retestWrongButton.style.display = 'none';
             timerDisplay.textContent = '';
             recordDisplay.textContent = '';
 
-            // Reset game mode selection
-            gameMode = 'standard';
-            lowestTimeCheckbox.checked = false;
-            highestScoreCheckbox.checked = false;
-            lowestTimeOptions.style.display = 'none';
-            highestScoreOptions.style.display = 'none';
-
-            // Show settings and start button, hide game elements
             settingsArea.style.display = 'block';
             startGameButton.style.display = 'block';
             questionArea.style.display = 'none';
@@ -1216,38 +1128,32 @@
                 updateScoreDisplay();
                 displayQuestion();
 
-                // Hide settings and start button, show game elements
                 settingsArea.style.display = 'none';
                 startGameButton.style.display = 'none';
                 questionArea.style.display = 'block';
                 feedbackArea.style.display = 'block';
                 currentScoreDisplay.style.display = 'flex';
 
-                if (gameMode === 'specific') {
-                    startTime = Date.now();
-                    timerInterval = setInterval(() => {
-                        const seconds = Math.floor((Date.now() - startTime) / 1000);
-                        timerDisplay.textContent = `Time: ${formatTime(seconds)}`;
-                    }, 1000);
-                    recordDisplay.textContent = ''; // No records for this mode
-                } else if (gameMode === 'lowestTime') {
-                    startTime = Date.now();
+                const isSpecific = practiceSpecificWordsCheckbox.checked;
+                startTime = Date.now();
+
+                if (lowestTimeCheckbox.checked) {
                     timerInterval = setInterval(() => {
                         const seconds = Math.floor((Date.now() - startTime) / 1000);
                         timerDisplay.textContent = `Time: ${formatTime(seconds)}`;
                     }, 1000);
 
                     const count = fillInsCount.value;
-                    const lowestTimes = getLowestTimes();
+                    const lowestTimes = getLowestTimes(isSpecific);
+                    const recordText = isSpecific ? `Best Time for these ${questions.length} specific words:` : `Best Time for ${count} words:`;
                     if (lowestTimes[count]) {
-                        recordDisplay.textContent = `Best Time for ${count}: ${formatTime(lowestTimes[count])}`;
+                        recordDisplay.textContent = `${recordText} ${formatTime(lowestTimes[count])}`;
                     } else {
-                        recordDisplay.textContent = `No record for ${count} yet.`;
+                        recordDisplay.textContent = `No record for this set yet.`;
                     }
-                } else if (gameMode === 'highestScore') {
+                } else if (highestScoreCheckbox.checked) {
                     const durationMinutes = parseInt(timeDuration.value, 10);
-                    let timeLeft = durationMinutes * 60;
-
+                    timeLeft = durationMinutes * 60;
                     timerDisplay.textContent = `Time Left: ${formatTime(timeLeft)}`;
 
                     timerInterval = setInterval(() => {
@@ -1255,16 +1161,27 @@
                         timerDisplay.textContent = `Time Left: ${formatTime(timeLeft)}`;
                         if (timeLeft <= 0) {
                             clearInterval(timerInterval);
-                            endGame();
+                            endGame(true); // Timed out
                         }
                     }, 1000);
 
-                    const highestScores = getHighestScores();
-                    if (highestScores[durationMinutes]) {
-                        recordDisplay.textContent = `Best Score for ${durationMinutes} min: ${highestScores[durationMinutes]}`;
-                    } else {
-                        recordDisplay.textContent = `No record for ${durationMinutes} min yet.`;
+                    const highestScores = getHighestScores(isSpecific);
+                    let recordKey = durationMinutes;
+                    let recordText = `Best Score for ${durationMinutes} min:`;
+                    if (isSpecific) {
+                        recordKey = durationMinutes + '_' + questions.length;
+                        recordText = `Best Score for these ${questions.length} specific words:`;
                     }
+
+                    if (highestScores[recordKey]) {
+                        recordDisplay.textContent = `${recordText} ${formatTime(highestScores[recordKey])} remaining`;
+                    } else {
+                        recordDisplay.textContent = `No record for this set yet.`;
+                    }
+                } else {
+                    // Standard or Specific-only mode (no timer)
+                    timerDisplay.textContent = '';
+                    recordDisplay.textContent = '';
                 }
             }
         }
@@ -1274,17 +1191,15 @@
         restartButton.addEventListener('click', restartGame);
         retestWrongButton.addEventListener('click', retestWrongQuestions);
         startGameButton.addEventListener('click', startGame);
+
         practiceSpecificWordsCheckbox.addEventListener('change', function() {
-            if (this.checked) {
-                specificWordsOptions.style.display = 'block';
-                lowestTimeCheckbox.checked = false;
-                highestScoreCheckbox.checked = false;
-                lowestTimeOptions.style.display = 'none';
-                highestScoreOptions.style.display = 'none';
-                gameMode = 'specific';
-            } else {
-                specificWordsOptions.style.display = 'none';
-                if(gameMode === 'specific') gameMode = 'standard';
+            specificWordsOptions.style.display = this.checked ? 'block' : 'none';
+        });
+
+        specificWordsSelector.addEventListener('change', () => {
+            const selectedCount = specificWordsSelector.selectedOptions.length;
+            if (selectedCount > 0) {
+                fillInsCount.value = selectedCount * 2;
             }
         });
 
@@ -1303,36 +1218,26 @@
 
         lowestTimeCheckbox.addEventListener('change', function() {
             if (this.checked) {
-                gameMode = 'lowestTime';
                 lowestTimeOptions.style.display = 'block';
                 highestScoreCheckbox.checked = false;
                 highestScoreOptions.style.display = 'none';
-                practiceSpecificWordsCheckbox.checked = false;
-                specificWordsOptions.style.display = 'none';
             } else {
-                gameMode = 'standard';
                 lowestTimeOptions.style.display = 'none';
             }
         });
 
         highestScoreCheckbox.addEventListener('change', function() {
             if (this.checked) {
-                gameMode = 'highestScore';
                 highestScoreOptions.style.display = 'block';
                 lowestTimeCheckbox.checked = false;
                 lowestTimeOptions.style.display = 'none';
-                practiceSpecificWordsCheckbox.checked = false;
-                specificWordsOptions.style.display = 'none';
             } else {
-                gameMode = 'standard';
                 highestScoreOptions.style.display = 'none';
             }
         });
 
-        // Initialize settings when the window loads
         window.onload = function() {
             populateWordSelector();
-            // Initial UI State: Show settings and start button, hide game elements
             settingsArea.style.display = 'block';
             startGameButton.style.display = 'block';
             questionArea.style.display = 'none';
