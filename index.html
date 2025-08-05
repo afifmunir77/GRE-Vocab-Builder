@@ -997,9 +997,9 @@
             timerDisplay.textContent = '';
             gameOverMessage.innerHTML = ''; // Clear previous message
 
-            if (lowestTimeCheckbox.checked) {
+            if (lowestTimeCheckbox.checked || (isSpecific && !highestScoreCheckbox.checked)) {
                 const timeTaken = Math.round((Date.now() - startTime) / 1000);
-                const count = fillInsCount.value;
+                const count = questions.length;
                 let message = `You completed ${count} fill-ins in ${formatTime(timeTaken)} with ${wrongAnswers} mistake(s).`;
 
                 if (wrongAnswers > 0) {
@@ -1055,7 +1055,7 @@
                 }
                 gameOverMessage.innerHTML = message;
             } else {
-                // Standard or Specific-only mode
+                // Standard mode (no timer, no specific words)
                 gameOverMessage.style.display = 'block';
                 document.getElementById('final-score-correct').textContent = correctAnswers;
                 document.getElementById('final-score-wrong').textContent = wrongAnswers;
@@ -1137,15 +1137,15 @@
                 const isSpecific = practiceSpecificWordsCheckbox.checked;
                 startTime = Date.now();
 
-                if (lowestTimeCheckbox.checked) {
+                if (lowestTimeCheckbox.checked || (isSpecific && !highestScoreCheckbox.checked)) {
                     timerInterval = setInterval(() => {
                         const seconds = Math.floor((Date.now() - startTime) / 1000);
                         timerDisplay.textContent = `Time: ${formatTime(seconds)}`;
                     }, 1000);
 
-                    const count = fillInsCount.value;
+                    const count = questions.length;
                     const lowestTimes = getLowestTimes(isSpecific);
-                    const recordText = isSpecific ? `Best Time for these ${questions.length} specific words:` : `Best Time for ${count} words:`;
+                    const recordText = `Best Time for these ${count} words:`;
                     if (lowestTimes[count]) {
                         recordDisplay.textContent = `${recordText} ${formatTime(lowestTimes[count])}`;
                     } else {
@@ -1179,7 +1179,7 @@
                         recordDisplay.textContent = `No record for this set yet.`;
                     }
                 } else {
-                    // Standard or Specific-only mode (no timer)
+                    // Standard mode (no timer, no specific words)
                     timerDisplay.textContent = '';
                     recordDisplay.textContent = '';
                 }
