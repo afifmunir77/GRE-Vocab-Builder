@@ -43,6 +43,17 @@
             <h1 class="text-4xl font-extrabold text-center mb-8 text-gray-900 leading-tight">GRE Vocab Builder</h1>
 
             <div id="settings-area" class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                <!-- Word Group Practice -->
+                <div class="flex items-center mb-2">
+                    <input type="checkbox" id="practiceGroupCheckbox" class="mr-2 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                    <label for="practiceGroupCheckbox" class="text-gray-700 font-medium">Practice a Saved Group</label>
+                </div>
+                <div id="groupPracticeOptions" style="display:none;" class="pl-7 mb-4">
+                    <select id="play-group-selector" class="p-2 border border-gray-300 rounded-md w-full md:w-3/4 shadow-sm">
+                        <!-- Saved groups will be populated here by JS -->
+                    </select>
+                </div>
+
                 <div class="flex items-center mb-2">
                     <input type="checkbox" id="practiceSpecificWordsCheckbox" class="mr-2 h-5 w-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
                     <label for="practiceSpecificWordsCheckbox" class="text-gray-700 font-medium">Practice Specific Words</label>
@@ -74,6 +85,7 @@
             </div>
 
             <div class="text-center mb-6">
+                <button id="manage-groups-button" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300 mr-4">Manage Groups</button>
                 <button id="start-game-button" class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-green-300">Start Game</button>
             </div>
 
@@ -93,6 +105,7 @@
 
             <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
                 <p id="current-score-display" class="text-lg text-gray-700 font-semibold">Score: <span class="text-green-600">0</span>-<span class="text-red-600">0</span> out of <span id="total-questions" class="text-gray-600">60</span></p>
+                <p id="remaining-words-display" class="text-lg text-gray-700 font-semibold"></p>
                 <button id="next-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-blue-300" style="display: none;">Next Question</button>
             </div>
             <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mt-4">
@@ -102,6 +115,45 @@
 
             <div id="game-over-message" class="text-center text-3xl font-extrabold text-gray-900 mt-8" style="display: none;">
                 Game Over! Your final score is <span id="final-score-correct" class="text-green-600">0</span>-<span id="final-score-wrong" class="text-red-600">0</span> out of <span id="final-score-total" class="text-gray-600">0</span>.
+            </div>
+        </div>
+    </div>
+
+    <!-- Group Management Modal -->
+    <div id="group-management-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full" style="display: none;">
+        <div class="relative top-20 mx-auto p-5 border w-1/2 shadow-lg rounded-md bg-white">
+            <div class="mt-3 text-center">
+                <h3 class="text-lg leading-6 font-medium text-gray-900">Manage Word Groups</h3>
+                <div class="mt-2 px-7 py-3">
+                    <!-- Group Selection -->
+                    <div class="mb-4">
+                        <label for="group-selector" class="block text-sm font-medium text-gray-700 text-left">Select Group to Edit</label>
+                        <select id="group-selector" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                            <option value="new-group">-- Create New Group --</option>
+                            <!-- Saved groups will be populated here by JS -->
+                        </select>
+                    </div>
+
+                    <!-- Group Name Input -->
+                    <div class="mb-4">
+                        <label for="group-name-input" class="block text-sm font-medium text-gray-700 text-left">Group Name</label>
+                        <input type="text" id="group-name-input" placeholder="Enter group name..." class="mt-1 p-2 border border-gray-300 rounded-md w-full">
+                    </div>
+
+                    <!-- Word Selection for Group -->
+                    <div class="mb-4">
+                         <label for="group-word-selector" class="block text-sm font-medium text-gray-700 text-left">Select Words</for>
+                         <input type="text" id="group-word-search" placeholder="Search words..." class="p-2 border border-gray-300 rounded-md w-full mb-2">
+                         <select id="group-word-selector" multiple class="p-2 border border-gray-300 rounded-md w-full" style="height: 200px;">
+                            <!-- All words will be populated here by JS -->
+                         </select>
+                    </div>
+                </div>
+                <div class="items-center px-4 py-3 space-x-4">
+                    <button id="save-group-button" class="px-4 py-2 bg-green-500 text-white text-base font-medium rounded-md w-auto shadow-sm hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-300">Save Group</button>
+                    <button id="delete-group-button" class="px-4 py-2 bg-red-500 text-white text-base font-medium rounded-md w-auto shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-300">Delete Group</button>
+                    <button id="close-modal-button" class="px-4 py-2 bg-gray-500 text-white text-base font-medium rounded-md w-auto shadow-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-300">Close</button>
+                </div>
             </div>
         </div>
     </div>
@@ -856,6 +908,7 @@
         const optionsContainer = document.getElementById('options-container');
         const feedbackArea = document.getElementById('feedback-area');
         const currentScoreDisplay = document.getElementById('current-score-display');
+        const remainingWordsDisplay = document.getElementById('remaining-words-display');
         const totalQuestionsElement = document.getElementById('total-questions'); // This span is inside current-score-display now for total in game
         const nextButton = document.getElementById('next-button');
         const restartButton = document.getElementById('restart-button');
@@ -871,6 +924,23 @@
         const startGameButton = document.getElementById('start-game-button');
         const settingsArea = document.getElementById('settings-area');
         const questionArea = document.getElementById('question-area'); // Already defined, but good to note its role here
+
+        // Group Management Modal Elements
+        const manageGroupsButton = document.getElementById('manage-groups-button');
+        const groupManagementModal = document.getElementById('group-management-modal');
+        const groupSelector = document.getElementById('group-selector');
+        const groupNameInput = document.getElementById('group-name-input');
+        const groupWordSearch = document.getElementById('group-word-search');
+        const groupWordSelector = document.getElementById('group-word-selector');
+        const saveGroupButton = document.getElementById('save-group-button');
+        const deleteGroupButton = document.getElementById('delete-group-button');
+        const closeModalButton = document.getElementById('close-modal-button');
+
+        // Practice Mode Elements
+        const practiceGroupCheckbox = document.getElementById('practiceGroupCheckbox');
+        const groupPracticeOptions = document.getElementById('groupPracticeOptions');
+        const playGroupSelector = document.getElementById('play-group-selector');
+
         let startTime;
 
         /**
@@ -941,9 +1011,25 @@
             questions = [];
             let sourceSentences = [...sentences];
             let sourceWordsForOptions = wordsData.map(w => w.word);
+            const isGroupPractice = practiceGroupCheckbox.checked;
             const isSpecific = practiceSpecificWordsCheckbox.checked;
 
-            if (isSpecific) {
+            if (isGroupPractice) {
+                const selectedGroupName = playGroupSelector.value;
+                const groups = getWordGroups();
+                if (selectedGroupName && groups[selectedGroupName]) {
+                    const selectedWords = groups[selectedGroupName];
+                    if (selectedWords.length === 0) {
+                        alert("The selected group is empty. Please edit the group to add words.");
+                        return false;
+                    }
+                    sourceSentences = sentences.filter(s => selectedWords.includes(s.word));
+                    sourceWordsForOptions = [...selectedWords];
+                } else {
+                    alert("Please select a valid group or uncheck 'Practice a Saved Group'.");
+                    return false;
+                }
+            } else if (isSpecific) {
                 const selectedWords = Array.from(specificWordsSelector.selectedOptions).map(opt => opt.value);
                 if (selectedWords.length > 0) {
                     sourceSentences = sentences.filter(s => selectedWords.includes(s.word));
@@ -1092,6 +1178,8 @@
          */
         function updateScoreDisplay() {
             currentScoreDisplay.innerHTML = `Score: <span class="text-green-600">${correctAnswers}</span>-<span class="text-red-600">${wrongAnswers}</span> out of <span id="total-questions" class="text-gray-600">${questions.length}</span>`;
+            const remaining = questions.length - (correctAnswers + wrongAnswers);
+            remainingWordsDisplay.innerHTML = `Remaining: <span class="text-purple-600 font-bold">${remaining}</span>`;
         }
 
         /**
@@ -1109,15 +1197,17 @@
         function endGame(timedOut = false) {
             clearInterval(timerInterval);
             const isSpecific = practiceSpecificWordsCheckbox.checked;
+            const isGroupPractice = practiceGroupCheckbox.checked;
 
             questionArea.style.display = 'none';
             feedbackArea.style.display = 'none';
             nextButton.style.display = 'none';
             currentScoreDisplay.style.display = 'none';
+            remainingWordsDisplay.style.display = 'none';
             timerDisplay.textContent = '';
             gameOverMessage.innerHTML = ''; // Clear previous message
 
-            if (lowestTimeCheckbox.checked || (isSpecific && !highestScoreCheckbox.checked)) {
+            if (lowestTimeCheckbox.checked || ((isSpecific || isGroupPractice) && !highestScoreCheckbox.checked)) {
                 const timeTaken = Math.round((Date.now() - startTime) / 1000);
                 const count = questions.length;
                 let message = `You completed ${count} fill-ins in ${formatTime(timeTaken)} with ${wrongAnswers} mistake(s).`;
@@ -1213,6 +1303,7 @@
             restartButton.style.display = 'none';
             retestWrongButton.style.display = 'none';
             currentScoreDisplay.style.display = 'flex';
+            remainingWordsDisplay.style.display = 'block';
 
             updateScoreDisplay();
             displayQuestion();
@@ -1237,9 +1328,11 @@
 
             settingsArea.style.display = 'block';
             startGameButton.style.display = 'block';
+            manageGroupsButton.style.display = 'inline-block';
             questionArea.style.display = 'none';
             feedbackArea.style.display = 'none';
             currentScoreDisplay.style.display = 'none';
+            remainingWordsDisplay.style.display = 'none';
             nextButton.style.display = 'none';
         }
 
@@ -1250,14 +1343,17 @@
 
                 settingsArea.style.display = 'none';
                 startGameButton.style.display = 'none';
+                manageGroupsButton.style.display = 'none';
                 questionArea.style.display = 'block';
                 feedbackArea.style.display = 'block';
                 currentScoreDisplay.style.display = 'flex';
+                remainingWordsDisplay.style.display = 'block';
 
                 const isSpecific = practiceSpecificWordsCheckbox.checked;
+                const isGroupPractice = practiceGroupCheckbox.checked;
                 startTime = Date.now();
 
-                if (lowestTimeCheckbox.checked || (isSpecific && !highestScoreCheckbox.checked)) {
+                if (lowestTimeCheckbox.checked || ((isSpecific || isGroupPractice) && !highestScoreCheckbox.checked)) {
                     timerInterval = setInterval(() => {
                         const seconds = Math.floor((Date.now() - startTime) / 1000);
                         timerDisplay.textContent = `Time: ${formatTime(seconds)}`;
@@ -1306,14 +1402,158 @@
             }
         }
 
+        // --- Group Management Logic ---
+
+        function openGroupModal() {
+            groupManagementModal.style.display = 'block';
+            loadGroupsIntoSelector();
+            populateGroupWordSelector();
+            resetModal();
+        }
+
+        function closeGroupModal() {
+            groupManagementModal.style.display = 'none';
+        }
+
+        function populateGroupWordSelector() {
+            if (groupWordSelector.options.length > 0) return; // Populate only once
+            groupWordSelector.innerHTML = '';
+            wordsData.forEach(wordObj => {
+                const option = document.createElement('option');
+                option.value = wordObj.word;
+                option.textContent = wordObj.word;
+                groupWordSelector.appendChild(option);
+            });
+        }
+
+        function getWordGroups() {
+            return JSON.parse(localStorage.getItem('wordGroups')) || {};
+        }
+
+        function saveWordGroup(name, words) {
+            if (!name) {
+                alert('Please enter a group name.');
+                return;
+            }
+            if (words.length === 0) {
+                alert('Please select at least one word for the group.');
+                return;
+            }
+            const groups = getWordGroups();
+            groups[name] = words;
+            localStorage.setItem('wordGroups', JSON.stringify(groups));
+            alert(`Group '${name}' saved successfully!`);
+            loadGroupsIntoSelector(); // Refresh the list
+            loadPlayableGroups(); // Also refresh the list in the main settings
+        }
+
+        function deleteWordGroup(name) {
+            const groups = getWordGroups();
+            if (groups[name]) {
+                if (confirm(`Are you sure you want to delete the group '${name}'?`)) {
+                    delete groups[name];
+                    localStorage.setItem('wordGroups', JSON.stringify(groups));
+                    alert(`Group '${name}' deleted.`);
+                    loadGroupsIntoSelector(); // Refresh the list
+                    loadPlayableGroups(); // Also refresh the list in the main settings
+                    resetModal();
+                }
+            }
+        }
+
+        function loadGroupsIntoSelector() {
+            const groups = getWordGroups();
+            const currentGroup = groupSelector.value;
+            groupSelector.innerHTML = '<option value="new-group">-- Create New Group --</option>';
+            for (const name in groups) {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                groupSelector.appendChild(option);
+            }
+            // Try to preserve selection, otherwise default to new
+            groupSelector.value = currentGroup && groups[currentGroup] ? currentGroup : 'new-group';
+        }
+
+        function handleGroupSelectionChange() {
+            const selectedGroupName = groupSelector.value;
+            const groups = getWordGroups();
+            if (selectedGroupName === 'new-group') {
+                resetModal();
+            } else {
+                groupNameInput.value = selectedGroupName;
+                // Clear current selections
+                Array.from(groupWordSelector.options).forEach(opt => opt.selected = false);
+                // Select words from the loaded group
+                const groupWords = groups[selectedGroupName] || [];
+                groupWords.forEach(word => {
+                    const option = Array.from(groupWordSelector.options).find(opt => opt.value === word);
+                    if (option) {
+                        option.selected = true;
+                    }
+                });
+                deleteGroupButton.style.display = 'inline-block';
+            }
+        }
+
+        function resetModal() {
+            groupNameInput.value = '';
+            groupSelector.value = 'new-group';
+            Array.from(groupWordSelector.options).forEach(opt => opt.selected = false);
+            groupWordSearch.value = '';
+            filterWordsInGroupSelector(); // Clear filter
+            deleteGroupButton.style.display = 'none';
+        }
+
+        function filterWordsInGroupSelector() {
+            const filter = groupWordSearch.value.toUpperCase();
+            const options = groupWordSelector.getElementsByTagName('option');
+            for (let i = 0; i < options.length; i++) {
+                const txtValue = options[i].textContent || options[i].innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    options[i].style.display = "";
+                } else {
+                    options[i].style.display = "none";
+                }
+            }
+        }
+
         // Event listeners
         nextButton.addEventListener('click', nextQuestion);
         restartButton.addEventListener('click', restartGame);
         retestWrongButton.addEventListener('click', retestWrongQuestions);
         startGameButton.addEventListener('click', startGame);
 
+        function loadPlayableGroups() {
+            const groups = getWordGroups();
+            playGroupSelector.innerHTML = '';
+            if (Object.keys(groups).length === 0) {
+                playGroupSelector.innerHTML = '<option value="">No groups saved</option>';
+                return;
+            }
+            for (const name in groups) {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                playGroupSelector.appendChild(option);
+            }
+        }
+
+        practiceGroupCheckbox.addEventListener('change', function() {
+            groupPracticeOptions.style.display = this.checked ? 'block' : 'none';
+            if (this.checked) {
+                practiceSpecificWordsCheckbox.checked = false;
+                specificWordsOptions.style.display = 'none';
+                loadPlayableGroups();
+            }
+        });
+
         practiceSpecificWordsCheckbox.addEventListener('change', function() {
             specificWordsOptions.style.display = this.checked ? 'block' : 'none';
+            if (this.checked) {
+                practiceGroupCheckbox.checked = false;
+                groupPracticeOptions.style.display = 'none';
+            }
         });
 
         specificWordsSelector.addEventListener('change', () => {
@@ -1358,11 +1598,30 @@
 
         window.onload = function() {
             populateWordSelector();
+
+            // Group Management Event Listeners
+            manageGroupsButton.addEventListener('click', openGroupModal);
+            closeModalButton.addEventListener('click', closeGroupModal);
+            saveGroupButton.addEventListener('click', () => {
+                const groupName = groupNameInput.value.trim();
+                const selectedWords = Array.from(groupWordSelector.selectedOptions).map(opt => opt.value);
+                saveWordGroup(groupName, selectedWords);
+            });
+            deleteGroupButton.addEventListener('click', () => {
+                const groupName = groupSelector.value;
+                if (groupName !== 'new-group') {
+                    deleteWordGroup(groupName);
+                }
+            });
+            groupSelector.addEventListener('change', handleGroupSelectionChange);
+            groupWordSearch.addEventListener('keyup', filterWordsInGroupSelector);
+
             settingsArea.style.display = 'block';
             startGameButton.style.display = 'block';
             questionArea.style.display = 'none';
             feedbackArea.style.display = 'none';
             currentScoreDisplay.style.display = 'none';
+            remainingWordsDisplay.style.display = 'none';
             nextButton.style.display = 'none';
             restartButton.style.display = 'none';
             retestWrongButton.style.display = 'none';
